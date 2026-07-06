@@ -24,16 +24,14 @@ A 6-DOF arm finds a colored object it has never been told the location of, compu
 
 ### Arm detecting and reaching the object
 
-<!-- Paste your GIF's <img ... /> tag here (drag-drop the file into GitHub's editor to get one). -->
-<img width="100%" alt="Arm detecting the object and moving to hover above it" src="" />
+<img width="100%" alt="Arm detecting the object and moving to hover above it" src="https://github.com/user-attachments/assets/fc04e0df-98af-4029-ab06-f47de7a88a33" />
 
 </td>
 <td width="50%" align="center">
 
 ### Robot model in RViz
 
-<!-- Paste your RViz URDF screenshot's <img ... /> tag here (drag-drop the file into GitHub's editor to get one). -->
-<img width="100%" alt="6-DOF arm URDF in RViz" src="" />
+<img width="100%" alt="6-DOF arm URDF in RViz" src="https://github.com/user-attachments/assets/cd8e9d2b-e03a-423c-b164-2702b74ecc80" />
 
 </td>
 </tr>
