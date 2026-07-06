@@ -18,15 +18,6 @@
 // a chain of fixed joints off `world`, so robot_state_publisher puts the whole
 // transform on /tf_static and we can look it up at any time.
 static constexpr char kTargetFrame[] = "robot_base";
-
-// Approximate reachable workspace, modeled as a spherical shell centered at the
-// shoulder pitch joint (which sits on the base z-axis). Values derived from the
-// URDF link lengths, in the robot_base frame:
-//   shoulder height = spin(0.06) + spin_arm(0.02) + shoulder(0.10) = 0.18 m
-//   max reach (shoulder -> fingertip, arm fully extended)         ~ 0.85 m
-//   min reach (arm folded at the elbow/wrist joint limits)        ~ 0.15 m
-// NOTE: this ignores joint limits and end-effector orientation, so it's a coarse
-// gate -- a point inside the shell is not guaranteed IK-solvable. Tune as needed.
 static constexpr double kShoulder[3] = {0.0, 0.0, 0.18};
 static constexpr double kReachMax = 0.85;
 static constexpr double kReachMin = 0.15;

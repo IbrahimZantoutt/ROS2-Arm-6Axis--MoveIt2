@@ -1,17 +1,57 @@
-# MoveItArm — Vision-Guided Robotic Arm in ROS 2 + Gazebo
+<div align="center">
 
-A 6-axis robotic arm simulated in **Gazebo Classic** and controlled with **MoveIt 2**,
-that uses a fixed RGB-D camera to **detect a colored object, localize it in 3D, and
-plan + execute a collision-free motion to hover above it** — fully automatically.
+# Vision-Guided Robotic Arm — 6-DOF, ROS 2 & MoveIt
 
-The camera sees a block on the ground, a vision node turns the pixel into a 3D point
-in the arm's base frame, checks it against the arm's reachable workspace, and publishes
-it as a target. A controller node receives that target, runs an inverse-kinematics
-pre-check, plans a trajectory with MoveIt, and drives the simulated arm to it.
+**Autonomous object detection, 3D localization, and collision-free motion planning in ROS 2 & Gazebo, driven by a depth camera and MoveIt.**
+
+A 6-DOF arm finds a colored object it has never been told the location of, computes the object's 3D position from a fixed overhead RGB-D camera, checks it against the arm's reachable workspace, and plans a **collision-free** trajectory to hover directly above it — fully automatically.
+
+![ROS 2](https://img.shields.io/badge/ROS_2-Humble-22314E?logo=ros&logoColor=white)
+![MoveIt 2](https://img.shields.io/badge/MoveIt_2-Motion_Planning-0A7BBB)
+![Gazebo](https://img.shields.io/badge/Gazebo-Classic-FF6C2C?logo=gazebo&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-Perception-5C3EE8?logo=opencv&logoColor=white)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+
+</div>
 
 ---
 
-## What it does
+## Demo
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+### Arm detecting and reaching the object
+
+<!-- Paste your GIF's <img ... /> tag here (drag-drop the file into GitHub's editor to get one). -->
+<img width="100%" alt="Arm detecting the object and moving to hover above it" src="" />
+
+</td>
+<td width="50%" align="center">
+
+### Robot model in RViz
+
+<!-- Paste your RViz URDF screenshot's <img ... /> tag here (drag-drop the file into GitHub's editor to get one). -->
+<img width="100%" alt="6-DOF arm URDF in RViz" src="" />
+
+</td>
+</tr>
+</table>
+
+---
+
+## Highlights
+
+- **No hard-coded target position** — the arm discovers where the object is purely from camera data at runtime.
+- **Closed perception → planning → action loop** — vision detects the object, deprojects it to a 3D pose, publishes it, and the controller plans and drives the arm to hover above it.
+- **Reachability-aware** — every detected point is checked against a model of the arm's workspace; out-of-reach points are clamped onto the nearest reachable shell so the arm always gets something it can attempt.
+- **Real collision checking** — a `compute_ik` pre-check confirms a collision-free IK solution exists before MoveIt plans and executes, so no unreachable or colliding target is ever sent to the robot.
+- **Written in modern C++** across two ROS 2 nodes, with a URDF/Xacro robot model and a MoveIt Setup Assistant configuration.
+
+---
+
+## How It Works
 
 ```
                  Gazebo (sim + RGB-D camera)
@@ -34,42 +74,32 @@ pre-check, plans a trajectory with MoveIt, and drives the simulated arm to it.
               gazebo_ros2_control controllers (in sim)
 ```
 
-Step by step:
+**1. Perception —** `vision_node` subscribes to the simulated RGB-D camera. It segments the colored object in HSV space (high-saturation pixels against the gray ground), takes the largest blob, and finds its pixel centroid.
 
-1. **Perception** — `vision_node` subscribes to the simulated RGB-D camera. It
-   segments the colored object in HSV space (high-saturation pixels against the gray
-   ground), takes the largest blob, and finds its pixel centroid.
-2. **3D localization** — using the depth image and the camera intrinsics
-   (`camera_info`), it deprojects that pixel to a 3D point in the camera optical frame,
-   then transforms it into the arm's `robot_base` frame via TF.
-3. **Reachability gate** — the point is checked against a coarse spherical-shell model
-   of the arm's workspace. In-reach points are published as-is; out-of-reach points are
-   clamped onto the nearest reachable shell so the arm always gets something it can try.
-   The published Z is overridden to a fixed **hover height** above the object (so the
-   arm doesn't dive into the floor).
-4. **Motion** — `arm_controller` receives the latest target on `/object_position`,
-   runs a `compute_ik` pre-check to confirm a collision-free solution exists, and if so
-   asks MoveIt to plan and execute a trajectory. Execution is sent to the
-   `gazebo_ros2_control` `JointTrajectoryController` running inside the simulation.
+**2. 3D localization —** using the depth image and the camera intrinsics (`camera_info`), it deprojects that pixel to a 3D point in the camera optical frame with a pinhole model, then transforms it into the arm's `robot_base` frame via **tf2**.
+
+**3. Reachability gate —** the point is checked against a coarse spherical-shell model of the arm's workspace. In-reach points are published as-is; out-of-reach points are clamped onto the nearest reachable shell so the arm always gets something it can try. The published Z is overridden to a fixed **hover height** above the object (so the arm doesn't dive into the floor).
+
+**4. Motion —** `arm_controller` receives the latest target on `/object_position`, runs a `compute_ik` pre-check to confirm a collision-free solution exists, and if so asks MoveIt to plan and execute a trajectory. Execution is sent to the `gazebo_ros2_control` `JointTrajectoryController` running inside the simulation.
 
 ---
 
-## Tech stack
+## Tech Stack
 
-| Area | Used |
-|------|------|
-| OS / Middleware | **ROS 2 Humble**, Ubuntu (tested under WSL2) |
-| Simulation | **Gazebo Classic** + `gazebo_ros` + `gazebo_ros2_control` |
-| Motion planning | **MoveIt 2** (`move_group`, `MoveGroupInterface`, `compute_ik`) |
-| Control | `ros2_control`, `joint_state_broadcaster`, `joint_trajectory_controller` |
-| Perception | **OpenCV**, `cv_bridge`, `image_geometry` (pinhole model), `tf2` |
-| Robot description | URDF / **xacro**, SRDF (MoveIt Setup Assistant) |
-| Language | **C++** (rclcpp nodes), **Python** (launch files) |
-| Messages | `geometry_msgs`, `sensor_msgs`, `moveit_msgs` |
+| Layer | Tools / Libraries |
+|---|---|
+| **OS / Middleware** | ROS 2 **Humble**, Ubuntu (tested under WSL2) |
+| **Motion planning** | **MoveIt 2** (`move_group`, `MoveGroupInterface`, `compute_ik`) |
+| **Simulation** | **Gazebo Classic**, `gazebo_ros`, `gazebo_ros2_control` |
+| **Control** | `ros2_control`, `joint_state_broadcaster`, `joint_trajectory_controller` |
+| **Perception** | **OpenCV**, `cv_bridge`, `image_geometry` (pinhole model), `tf2` / `tf2_ros` |
+| **Robot model** | URDF / **Xacro** (6-DOF arm + fixed RGB-D camera), SRDF from MoveIt Setup Assistant |
+| **Language / build** | **C++** (rclcpp nodes), **Python** (launch files), `colcon`, `ament_cmake` |
+| **Messages** | `geometry_msgs`, `sensor_msgs`, `moveit_msgs` |
 
 ---
 
-## Repository layout
+## Repository Layout
 
 ```
 MoveItArm/
@@ -99,15 +129,15 @@ MoveItArm/
 └── README.md
 ```
 
-The arm is a 6-DOF manipulator. The MoveIt planning group is named **`arm`**, with
-named poses `pose_1`, `pose_2`, `pose_3` defined in the SRDF.
+The arm is a 6-DOF manipulator. The MoveIt planning group is named **`arm`**, with named poses `pose_1`, `pose_2`, `pose_3` defined in the SRDF.
 
 ---
 
-## Prerequisites
+## Getting Started
 
+### Prerequisites
 - **ROS 2 Humble** (desktop install)
-- **Gazebo Classic** and the ROS 2 control bridges:
+- **Gazebo Classic**, MoveIt 2, and the ROS 2 control bridges
 
 ```bash
 sudo apt update
@@ -125,9 +155,7 @@ sudo apt install \
 
 OpenCV (`libopencv-dev`) is pulled in as a package dependency.
 
----
-
-## Build
+### Build
 
 ```bash
 cd ~/MoveItArm
@@ -137,11 +165,9 @@ source install/setup.bash
 
 Re-`source install/setup.bash` in every new terminal.
 
----
+### Run
 
-## Run
-
-### Option A — everything, then drive it (recommended)
+**Option A — everything, then drive it (recommended)**
 
 ```bash
 # Terminal 1 — Gazebo simulation + MoveIt move_group + RViz
@@ -154,11 +180,9 @@ ros2 launch moveit_arm_package run_controller.launch.py
 ros2 run moveit_arm_package vision_node
 ```
 
-Once all three are running, the camera detects the block, `vision_node` publishes a
-target on `/object_position`, and the arm plans and moves to hover above it. An OpenCV
-window ("raw frame") shows the live camera feed with the detected object outlined.
+Once all three are running, the camera detects the block, `vision_node` publishes a target on `/object_position`, and the arm plans and moves to hover above it. An OpenCV window ("raw frame") shows the live camera feed with the detected object outlined.
 
-### Option B — split launch (more control / easier debugging)
+**Option B — split launch (more control / easier debugging)**
 
 ```bash
 # Terminal 1
@@ -171,7 +195,7 @@ ros2 launch moveit_arm_package run_controller.launch.py
 ros2 run moveit_arm_package vision_node
 ```
 
-### Verify the controllers came up (optional)
+**Verify the controllers came up (optional)**
 
 ```bash
 ros2 control list_controllers
@@ -182,32 +206,24 @@ ros2 control list_controllers
 
 ---
 
-## How the nodes work
+## How the Nodes Work
 
 ### `vision_node` (`src/VisionNode.cpp`)
 - Subscribes to `/camera/image_raw`, `/camera/depth/image_raw`, `/camera/camera_info`.
-- Segments the object by saturation in HSV, picks the largest contour, computes its
-  centroid.
-- Deprojects the centroid to 3D with `image_geometry::PinholeCameraModel` + the depth
-  value, then `tf2`-transforms it into the `robot_base` frame.
-- Gates the point against an approximate reachable workspace (spherical shell around the
-  shoulder); clamps out-of-reach points to the nearest reachable point.
-- Publishes a rate-limited (1 Hz) `geometry_msgs/PointStamped` on `/object_position`,
-  with Z set to a fixed hover height.
+- Segments the object by saturation in HSV, picks the largest contour, computes its centroid.
+- Deprojects the centroid to 3D with `image_geometry::PinholeCameraModel` + the depth value, then `tf2`-transforms it into the `robot_base` frame.
+- Gates the point against an approximate reachable workspace (spherical shell around the shoulder); clamps out-of-reach points to the nearest reachable point.
+- Publishes a rate-limited (1 Hz) `geometry_msgs/PointStamped` on `/object_position`, with Z set to a fixed hover height.
 
 ### `arm_controller` (`src/ArmController.cpp`)
 - Subscribes to `/object_position` (keep-last depth 1: only the newest target matters).
-- A dedicated worker thread consumes the latest target one motion at a time
-  (`MoveGroupInterface` is not thread-safe).
-- For each target: calls the `compute_ik` service to confirm a **collision-free** IK
-  solution exists (and logs the precise reason if not), then plans and executes with
-  MoveIt.
-- The executor spins in a background thread so the async `compute_ik` future is actually
-  fulfilled while the worker waits on it.
+- A dedicated worker thread consumes the latest target one motion at a time (`MoveGroupInterface` is not thread-safe).
+- For each target: calls the `compute_ik` service to confirm a **collision-free** IK solution exists (and logs the precise reason if not), then plans and executes with MoveIt.
+- The executor spins in a background thread so the async `compute_ik` future is actually fulfilled while the worker waits on it.
 
 ---
 
-## Key ROS topics & services
+## Key ROS Topics & Services
 
 | Name | Type | Direction |
 |------|------|-----------|
@@ -219,26 +235,25 @@ ros2 control list_controllers
 
 ---
 
-## Notes & gotchas
+## Notes & Gotchas
 
 These are the non-obvious things that make the integration work (full detail in
 [docs/moveit_gazebo_integration.md](docs/moveit_gazebo_integration.md)):
 
-- **Never** `ros2 run moveit_arm_package arm_controller` directly — it needs
-  `robot_description_semantic` (the SRDF) injected, which only the launch file provides.
-  Always start it via `run_controller.launch.py`.
-- **Don't** run `moveit_config demo.launch.py` alongside Gazebo — it spins up a *mock*
-  `ros2_control` node that fights Gazebo's controller_manager.
-- Only **one** `ros2_control` block should be loaded for Gazebo (`GazeboSystem` in
-  `arm.urdf.xacro`). XML comments inside `robot_description` can silently break the
-  controller_manager, so the launch file strips comments and the XML declaration before
-  publishing.
+- **Never** `ros2 run moveit_arm_package arm_controller` directly — it needs `robot_description_semantic` (the SRDF) injected, which only the launch file provides. Always start it via `run_controller.launch.py`.
+- **Don't** run `moveit_config demo.launch.py` alongside Gazebo — it spins up a *mock* `ros2_control` node that fights Gazebo's controller_manager.
+- Only **one** `ros2_control` block should be loaded for Gazebo (`GazeboSystem` in `arm.urdf.xacro`). XML comments inside `robot_description` can silently break the controller_manager, so the launch file strips comments and the XML declaration before publishing.
 - `use_sim_time: True` everywhere so MoveIt and the Gazebo controllers share `/clock`.
-- On a slow machine, increase the `TimerAction` delay in `bringup.launch.py` if
-  `move_group` starts before the controllers exist.
+- On a slow machine, increase the `TimerAction` delay in `bringup.launch.py` if `move_group` starts before the controllers exist.
 
 ---
 
 ## License
 
 Apache-2.0
+
+<div align="center">
+
+*Built by [Ibrahim Zantout](https://github.com/IbrahimZantoutt) — robotics, perception & motion planning in ROS 2.*
+
+</div>
