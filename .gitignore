@@ -1,0 +1,4 @@
+# colcon / ROS 2 build artifacts — not important to version
+build/
+install/
+log/

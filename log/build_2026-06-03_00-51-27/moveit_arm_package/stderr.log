@@ -1,7 +1,0 @@
-[01m[K/home/ibrahim/MoveItArm/src/moveit_arm_package/src/VisionNode.cpp:[m[K In member function ‘[01m[Kvoid VisionNode::imageCallback(sensor_msgs::msg::Image_<std::allocator<void> >::ConstSharedPtr)[m[K’:
-[01m[K/home/ibrahim/MoveItArm/src/moveit_arm_package/src/VisionNode.cpp:41:33:[m[K [01;31m[Kerror: [m[K‘[01m[Kedges[m[K’ was not declared in this scope
-   41 |             cv::imshow("edges", [01;31m[Kedges[m[K);
-      |                                 [01;31m[K^~~~~[m[K
-gmake[2]: *** [CMakeFiles/vision_node.dir/build.make:76: CMakeFiles/vision_node.dir/src/VisionNode.cpp.o] Error 1
-gmake[1]: *** [CMakeFiles/Makefile2:165: CMakeFiles/vision_node.dir/all] Error 2
-gmake: *** [Makefile:146: all] Error 2
